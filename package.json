@@ -12,8 +12,7 @@
     "mongoose": "^8.3.2"
   },
   "devDependencies": {
-    "bun-types": "latest",
-    "bun-vercel": "^1.0.0-alpha.5"
+    "bun-types": "latest"
   },
   "module": "src/index.js"
 }
