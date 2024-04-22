@@ -3,7 +3,8 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun-vercel ./src/index.ts"
   },
   "dependencies": {
     "@elysiajs/jwt": "^1.0.2",
@@ -11,7 +12,8 @@
     "mongoose": "^8.3.2"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "bun-vercel": "^1.0.0-alpha.4"
   },
   "module": "src/index.js"
 }
