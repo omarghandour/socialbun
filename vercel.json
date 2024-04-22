@@ -1,3 +1,5 @@
 {
-  "rewrites": [{ "source": "(.*)", "destination": "api/index.ts" }]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "bun run build:vercel",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }
