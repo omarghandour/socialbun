@@ -1,8 +1,17 @@
+import cors from "@elysiajs/cors";
 import { Elysia } from "elysia";
+import connectDB from "../db/connectDB";
+import { api } from "../routes/userRoutes";
+import { jwt } from "@elysiajs/jwt";
 
 const app = new Elysia();
 
 app.get("/", () => "Hello Elysia");
+app.use(cors());
+
+connectDB();
+// Routes
+app.use(api);
 
 app.listen(3000);
 

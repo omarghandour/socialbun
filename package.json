@@ -3,11 +3,12 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts",
-    "build": "bun-vercel ./src/index.ts"
+    "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.0.2",
     "@elysiajs/jwt": "^1.0.2",
+    "@types/mongoose": "^5.11.97",
     "elysia": "latest",
     "mongoose": "^8.3.2"
   },
