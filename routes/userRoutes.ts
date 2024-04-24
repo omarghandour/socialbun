@@ -1,10 +1,23 @@
 import { Elysia, t } from "elysia";
-import { follow, loginUser, signupUser } from "../controllers/userController";
+import {
+  follow,
+  loginUser,
+  signupUser,
+  updateUser,
+} from "../controllers/userController";
 import jwt from "@elysiajs/jwt";
 import { protectedRoute } from "../middlewares/protectedRoute";
 const tokensec: any = process.env.JWT_SECRET;
 
-export const api = new Elysia()
+export const api = new Elysia().use(
+  jwt({
+    name: "jwt",
+    secret: tokensec,
+    exp: "15d",
+  })
+);
+
+api
   .post(
     "/signup",
     ({ jwt, body, set, cookie: { auth } }: any) =>
@@ -21,7 +34,7 @@ export const api = new Elysia()
   .post(
     "/login",
     ({ jwt, body, set, cookie: { auth } }: any) =>
-      loginUser(body, set, jwt, auth),
+      loginUser(jwt, body, set, auth),
     {
       body: t.Object({
         username: t.String(),
@@ -37,12 +50,20 @@ export const api = new Elysia()
 // follow
 api.post(
   "/follow/:id",
-  ({ set, params, cookie: { auth } }) => {
-    follow(set, params, auth);
-  },
+  ({ jwt, set, params, cookie: { auth } }) => follow(jwt, set, params, auth),
   {
-    beforeHandle({ set, cookie: { auth } }) {
-      protectedRoute(set, auth);
+    beforeHandle({ jwt, set, cookie: { auth } }) {
+      return protectedRoute(jwt, set, auth);
+    },
+  }
+);
+api.post(
+  "/update/:id",
+  ({ jwt, set, params, cookie: { auth }, body }) =>
+    updateUser(jwt, set, params, auth, body),
+  {
+    beforeHandle({ jwt, set, cookie: { auth } }) {
+      return protectedRoute(jwt, set, auth);
     },
   }
 );
@@ -52,10 +73,3 @@ api.get("/", ({ cookie: { name } }) => {
   name.secrets = "hihihi";
   return name;
 });
-api.use(
-  jwt({
-    name: "jwt",
-    secret: tokensec,
-    exp: "15d",
-  })
-);

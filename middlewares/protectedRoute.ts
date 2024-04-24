@@ -1,7 +1,7 @@
-const protectedRoute = async (set: any, auth: any) => {
+const protectedRoute = async (jwt: any, set: any, auth: any) => {
   try {
-    const token = auth.value;
-    if (!token) {
+    const token = await jwt.verify(auth.value);
+    if (token === false) {
       set.status = 401;
       return "Unauthorized";
     }

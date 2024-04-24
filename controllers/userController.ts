@@ -1,7 +1,7 @@
 import Elysia from "elysia";
 import User from "../models/userModel";
+import { jwt } from "@elysiajs/jwt";
 const signupUser = async (body: any, set: any, jwt: any, auth: any) => {
-  console.log(body.name);
   const name = body.name;
   const username = body.username;
   const email = body.email;
@@ -31,7 +31,6 @@ const signupUser = async (body: any, set: any, jwt: any, auth: any) => {
       auth.secrets = jwt;
       auth.value = createUser.id;
       auth.httpOnly = true;
-
       auth.maxAge = 15 * 24 * 60 * 60;
       auth.sameSite = "strict";
       return {
@@ -39,7 +38,6 @@ const signupUser = async (body: any, set: any, jwt: any, auth: any) => {
         name: createUser.name,
         username: createUser.username,
         email: createUser.email,
-        cookie: auth,
       };
     } else {
       set.status = 400;
@@ -50,7 +48,7 @@ const signupUser = async (body: any, set: any, jwt: any, auth: any) => {
     return err.message;
   }
 };
-const loginUser = async (body: any, set: any, jwt: any, auth: any) => {
+const loginUser = async (jwt: any, body: any, set: any, auth: any) => {
   const username = body.username;
   const password = body.password;
   try {
@@ -63,15 +61,16 @@ const loginUser = async (body: any, set: any, jwt: any, auth: any) => {
       return "Invalid username or password";
     }
 
-    auth.secrets = jwt;
-    auth.value = user.id;
-    auth.httpOnly = true;
-    auth.maxAge = 15 * 24 * 60 * 60;
-    auth.sameSite = "strict";
+    auth.set({
+      value: await jwt.sign(user.id),
+      httpOnly: true,
+      maxAge: 15 * 24 * 60 * 60,
+      sameSite: "strict",
+    });
 
     set.status = 200;
     return {
-      cookie: auth.value,
+      message: "Logged in successfully",
       id: user._id,
       name: user.name,
       username: user.username,
@@ -82,23 +81,115 @@ const loginUser = async (body: any, set: any, jwt: any, auth: any) => {
     return err.message;
   }
 };
+// update user
+const updateUser = async (
+  jwt: any,
+  set: any,
+  params: any,
+  auth: any,
+  body: any
+) => {
+  const name = body.name;
+  const username = body.username;
+  const email = body.email;
+  const password = body.password;
+  const profilepic = body.profilPic;
+  const bio = body.bio;
 
-// follow
-const follow = async (set: any, params: any, auth: any) => {
   try {
-    const user = await User.findById(params.id);
-    const id = auth.value;
-    const currentUser = await User.findById(id);
-    console.log(currentUser);
+    const currentUser = params.id;
+    const token = await jwt.verify(auth.value);
+    let stringValue = "";
+    for (const key in token) {
+      if (Object.prototype.hasOwnProperty.call(token, key) && key !== "exp") {
+        stringValue += token[key];
+      }
+    }
+    const user: any = await User.findById(params.id);
+    if (password) {
+      const hashedPassword = await Bun.password.hash(password, {
+        algorithm: "bcrypt",
+        cost: 10, // number between 4-31
+      });
+      user.password = hashedPassword || user.password;
+    }
 
     if (!user) {
       set.status = 404;
       return "User not found";
+    } else if (currentUser != stringValue) {
+      set.status = 500;
+      return "You are not allowed to update this user or maybe it doesn't exist";
     }
+    user.name = name || user.name;
+    user.username = username || user.username;
+    user.email = email || user.email;
+    user.profilPic = profilepic || user.profilPic;
+    user.bio = bio || user.bio;
+    const updatedUser = await user.save();
+    set.status = 200;
+    return {
+      message: "User successfully updated",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        profilPic: updatedUser.profilPic,
+        bio: updatedUser.bio,
+      },
+    };
+  } catch (err: any) {
+    set.status = 500;
+    return err.message;
+  }
+};
+// follow
+const follow = async (jwt: any, set: any, params: any, auth: any) => {
+  const token = await jwt.verify(auth.value);
+  let stringValue = "";
+  for (const key in token) {
+    if (Object.prototype.hasOwnProperty.call(token, key) && key !== "exp") {
+      stringValue += token[key];
+    }
+  }
+
+  try {
+    const user = await User.findById(params?.id);
+    // console.log(user);
+    const id = stringValue;
+    const currentUser = await User.findById(id);
+
+    if (auth === undefined || auth === null) {
+      set.status = 401;
+      return "Unauthorized";
+    }
+    if (!user || !currentUser) {
+      set.status = 404;
+      return "User not found";
+    }
+    if (id === params.id) {
+      set.status = 400;
+      return "You can't follow/unfollow yourself";
+    }
+    const isfollowing = currentUser.following.includes(params.id);
+    if (isfollowing === true) {
+      await User.findByIdAndUpdate(id, { $pull: { following: params.id } });
+      await User.findByIdAndUpdate(params.id, { $pull: { followers: id } });
+      set.status = 200;
+      return "User unfollowed successfully";
+    } else {
+      await User.findByIdAndUpdate(id, { $push: { following: params.id } });
+      await User.findByIdAndUpdate(params.id, { $push: { followers: id } });
+
+      set.status = 200;
+      return "User followed successfully";
+    }
+    // console.log(currentUser);
   } catch (err: any) {
     set.status = 500;
     return err.message;
   }
 };
 
-export { signupUser, loginUser, follow };
+export { signupUser, loginUser, follow, updateUser };
