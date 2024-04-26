@@ -2,7 +2,6 @@ import cors from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import connectDB from "../db/connectDB";
 import { api } from "../routes/userRoutes";
-import { jwt } from "@elysiajs/jwt";
 
 const app = new Elysia();
 

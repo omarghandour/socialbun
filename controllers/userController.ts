@@ -1,6 +1,4 @@
-import Elysia from "elysia";
 import User from "../models/userModel";
-import { jwt } from "@elysiajs/jwt";
 const signupUser = async (body: any, set: any, jwt: any, auth: any) => {
   const name = body.name;
   const username = body.username;
@@ -81,7 +79,6 @@ const loginUser = async (jwt: any, body: any, set: any, auth: any) => {
     return err.message;
   }
 };
-// update user
 const updateUser = async (
   jwt: any,
   set: any,
@@ -144,7 +141,25 @@ const updateUser = async (
     return err.message;
   }
 };
-// follow
+const getProfile = async (params: string, set: any) => {
+  try {
+    const username: string = params;
+    const user = await User.findOne({ username })
+      .select("-password")
+      .select("-updatedAt");
+    if (user === null || user === undefined || user.username !== username) {
+      set.status = 404;
+      return "User not found";
+    }
+
+    set.status = 200;
+    return user;
+  } catch (err: any) {
+    set.status = 500;
+    return err.message;
+  }
+};
+
 const follow = async (jwt: any, set: any, params: any, auth: any) => {
   const token = await jwt.verify(auth.value);
   let stringValue = "";
@@ -191,5 +206,18 @@ const follow = async (jwt: any, set: any, params: any, auth: any) => {
     return err.message;
   }
 };
-
-export { signupUser, loginUser, follow, updateUser };
+const post = async (jwt: any, set: any, auth: any, body: any) => {
+  const token = await jwt.verify(auth.value);
+  let stringValue: string = "";
+  for (const key in token) {
+    if (Object.prototype.hasOwnProperty.call(token, key) && key !== "exp") {
+      stringValue += token[key];
+    }
+  }
+  if (stringValue === "") {
+    set.status = 401;
+    return "UnAuthorized";
+  }
+  const user = await User.findById(stringValue);
+};
+export { signupUser, loginUser, follow, updateUser, post, getProfile };
