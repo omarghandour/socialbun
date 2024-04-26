@@ -5,9 +5,10 @@ const signupUser = async (body: any, set: any, jwt: any, auth: any) => {
   const email = body.email;
   const password = body.password;
   // use bcrypt
+  const salt: any = process.env.SALT;
   const hashedPassword = await Bun.password.hash(password, {
     algorithm: "bcrypt",
-    cost: 10, // number between 4-31
+    cost: +salt, // number between 4-31
   });
   try {
     const user = await User.findOne({
@@ -47,12 +48,12 @@ const signupUser = async (body: any, set: any, jwt: any, auth: any) => {
   }
 };
 const loginUser = async (jwt: any, body: any, set: any, auth: any) => {
-  const username = body.username;
-  const password = body.password;
+  const username: string = body.username;
+  const password: string = body.password;
   try {
     const user = await User.findOne({ username });
     const hash: any = user?.password;
-    const isMatch = await Bun.password.verify(password, hash || "");
+    const isMatch: boolean = await Bun.password.verify(password, hash || "");
 
     if (!user || !isMatch) {
       set.status = 400;
@@ -86,27 +87,28 @@ const updateUser = async (
   auth: any,
   body: any
 ) => {
-  const name = body.name;
-  const username = body.username;
-  const email = body.email;
-  const password = body.password;
-  const profilepic = body.profilPic;
-  const bio = body.bio;
+  const name: string = body.name;
+  const username: string = body.username;
+  const email: string = body.email;
+  const password: string = body.password;
+  const profilepic: string = body.profilPic;
+  const bio: string = body.bio;
 
   try {
-    const currentUser = params.id;
+    const currentUser: string = params.id;
     const token = await jwt.verify(auth.value);
-    let stringValue = "";
+    let stringValue: string = "";
     for (const key in token) {
       if (Object.prototype.hasOwnProperty.call(token, key) && key !== "exp") {
         stringValue += token[key];
       }
     }
+    const salt: any = process.env.SALT;
     const user: any = await User.findById(params.id);
     if (password) {
       const hashedPassword = await Bun.password.hash(password, {
         algorithm: "bcrypt",
-        cost: 10, // number between 4-31
+        cost: +salt, // number between 4-31
       });
       user.password = hashedPassword || user.password;
     }
@@ -162,7 +164,7 @@ const getProfile = async (params: string, set: any) => {
 
 const follow = async (jwt: any, set: any, params: any, auth: any) => {
   const token = await jwt.verify(auth.value);
-  let stringValue = "";
+  let stringValue: string = "";
   for (const key in token) {
     if (Object.prototype.hasOwnProperty.call(token, key) && key !== "exp") {
       stringValue += token[key];
@@ -172,7 +174,7 @@ const follow = async (jwt: any, set: any, params: any, auth: any) => {
   try {
     const user = await User.findById(params?.id);
     // console.log(user);
-    const id = stringValue;
+    const id: string = stringValue;
     const currentUser = await User.findById(id);
 
     if (auth === undefined || auth === null) {
