@@ -3,7 +3,6 @@ import {
   follow,
   getProfile,
   loginUser,
-  post,
   signupUser,
   updateUser,
 } from "../controllers/userController";
@@ -11,7 +10,7 @@ import jwt from "@elysiajs/jwt";
 import { protectedRoute } from "../middlewares/protectedRoute";
 const tokensec: any = process.env.JWT_SECRET;
 
-export const api = new Elysia().use(
+export const users = new Elysia({ prefix: "/users" }).use(
   jwt({
     name: "jwt",
     secret: tokensec,
@@ -19,7 +18,7 @@ export const api = new Elysia().use(
   })
 );
 
-api
+users
   .post(
     "/signup",
     ({ jwt, body, set, cookie: { auth } }: any) =>
@@ -49,41 +48,30 @@ api
     set.status = 200;
     return "User logged out successfully";
   });
-
-api.post(
-  "/follow/:id",
-  ({ jwt, set, params, cookie: { auth } }) => follow(jwt, set, params, auth),
+users.guard(
   {
     beforeHandle({ jwt, set, cookie: { auth } }) {
       return protectedRoute(jwt, set, auth);
     },
-  }
-); // follow/unfollow
-api.post(
-  "/update/:id",
-  ({ jwt, set, params, cookie: { auth }, body }) =>
-    updateUser(jwt, set, params, auth, body),
-  {
-    beforeHandle({ jwt, set, cookie: { auth } }) {
-      return protectedRoute(jwt, set, auth);
-    },
-  }
-); //update profile
-api.get("profile/:username", ({ params, set }) => {
+  },
+  (users) =>
+    users
+      .post("/follow/:id", ({ jwt, set, params, cookie: { auth } }) =>
+        follow(jwt, set, params, auth)
+      )
+      .post("/update/:id", ({ jwt, set, params, cookie: { auth }, body }) =>
+        updateUser(jwt, set, params, auth, body)
+      )
+);
+// follow/unfollow
+//update profile
+users.get("profile/:username", ({ params, set }) => {
   return getProfile(params.username, set);
 });
-api.post(
-  "/post",
-  ({ jwt, set, cookie: { auth }, body }) => post(jwt, set, auth, body),
-  {
-    beforeHandle({ jwt, set, cookie: { auth } }) {
-      return protectedRoute(jwt, set, auth);
-    },
-  }
-);
-api.get("/", ({ cookie: { name } }) => {
-  name.httpOnly = true;
-  name.value = "ss";
-  name.secrets = "hihihi";
-  return name;
-}); // test
+
+// users.get("/", ({ cookie: { name } }) => {
+//   name.httpOnly = true;
+//   name.value = "ss";
+//   name.secrets = "hihihi";
+//   return name;
+// }); // test

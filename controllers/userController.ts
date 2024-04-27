@@ -65,6 +65,7 @@ const loginUser = async (jwt: any, body: any, set: any, auth: any) => {
       httpOnly: true,
       maxAge: 15 * 24 * 60 * 60,
       sameSite: "strict",
+      path: "/",
     });
 
     set.status = 200;
@@ -208,18 +209,5 @@ const follow = async (jwt: any, set: any, params: any, auth: any) => {
     return err.message;
   }
 };
-const post = async (jwt: any, set: any, auth: any, body: any) => {
-  const token = await jwt.verify(auth.value);
-  let stringValue: string = "";
-  for (const key in token) {
-    if (Object.prototype.hasOwnProperty.call(token, key) && key !== "exp") {
-      stringValue += token[key];
-    }
-  }
-  if (stringValue === "") {
-    set.status = 401;
-    return "UnAuthorized";
-  }
-  const user = await User.findById(stringValue);
-};
-export { signupUser, loginUser, follow, updateUser, post, getProfile };
+
+export { signupUser, loginUser, follow, updateUser, getProfile };
