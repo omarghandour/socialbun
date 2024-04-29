@@ -119,4 +119,103 @@ const likeUnlike = async (jwt: any, set: any, auth: any, params: any) => {
     return err.message;
   }
 };
-export { createPost, getPost, deletePost, likeUnlike };
+const reply = async (jwt: any, set: any, auth: any, params: any, body: any) => {
+  try {
+    const postId: string = params.id;
+    let userId: string = "";
+    const token = await jwt.verify(auth.value);
+    for (const key in token) {
+      if (Object.prototype.hasOwnProperty.call(token, key) && key !== "exp") {
+        userId += token[key];
+      }
+    }
+    const user = await User.findById(userId);
+    const post: any = await Post.findById(postId);
+    const text = body.text;
+    const userProfilePic = user?.profilPic;
+    const username = user?.username;
+
+    if (!text || text.length === 0 || text === "") {
+      set.status = 400;
+      return "Text failed is required";
+    }
+
+    if (!post || post === undefined || post === null) {
+      set.status = 404;
+      return "Post not found";
+    }
+    console.log(userId, text, userProfilePic, username);
+
+    const reply = { userId, text, userProfilePic, username };
+    await post.replies.push(reply);
+    post.save();
+    set.status = 201;
+    return { message: "Reply created successfully", post };
+  } catch (err: any) {
+    set.status = 500;
+    console.log(err.message);
+    return err.message;
+  }
+};
+const feedFollowing = async (jwt: any, set: any, auth: any, params: any) => {
+  try {
+    let userId: string = "";
+    const token = await jwt.verify(auth.value);
+    for (const key in token) {
+      if (Object.prototype.hasOwnProperty.call(token, key) && key !== "exp") {
+        userId += token[key];
+      }
+    }
+    const user = await User.findById(userId);
+    const following = user?.following;
+    if (following?.length === 0) {
+      set.status = 404;
+      return "You are not following anyone";
+    }
+    const itemsPerPage = 10;
+    const pageNumber = params.id;
+    const skipCount = (pageNumber - 1) * itemsPerPage;
+    const posts = await Post.find({ postedBy: { $in: following } })
+      .skip(skipCount)
+      .limit(itemsPerPage)
+      .select("-updatedAt");
+    // console.log(posts);
+    if (posts.length === 0) {
+      set.status = 404;
+      return "No posts found";
+    }
+    set.status = 200;
+    return posts;
+  } catch (err: any) {
+    set.status = 500;
+    console.log(err.message);
+    return err.message;
+  }
+};
+const feedExplore = async (set: any, params: any) => {
+  try {
+    const itemsPerPage = 10;
+    const pageNumber = params.id;
+    const skipCount = (pageNumber - 1) * itemsPerPage;
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .skip(skipCount)
+      .limit(itemsPerPage)
+      .select("-updatedAt");
+    if (posts.length === 0) {
+      set.status = 404;
+      return "No more posts found";
+    }
+    set.status = 200;
+    return posts;
+  } catch (err: any) {}
+};
+export {
+  createPost,
+  getPost,
+  deletePost,
+  likeUnlike,
+  reply,
+  feedFollowing,
+  feedExplore,
+};

@@ -4,8 +4,11 @@ import jwt from "@elysiajs/jwt";
 import {
   createPost,
   deletePost,
+  feedExplore,
+  feedFollowing,
   getPost,
   likeUnlike,
+  reply,
 } from "../controllers/postController";
 const tokensec: any = process.env.JWT_SECRET;
 
@@ -24,6 +27,10 @@ posts.guard(
   },
   (posts) =>
     posts
+      .get("/feed/following/:id", ({ jwt, set, cookie: { auth }, params }) =>
+        feedFollowing(jwt, set, auth, params)
+      )
+      .get("/feed/explore/:id", ({ set, params }) => feedExplore(set, params))
       .post(
         "/create",
         ({ jwt, set, cookie: { auth }, body }) =>
@@ -38,8 +45,15 @@ posts.guard(
       .post("/like/:id", ({ jwt, set, cookie: { auth }, params }) =>
         likeUnlike(jwt, set, auth, params)
       )
-      .post("/reply/:id", ({ jwt, set, cookie: { auth }, params }) =>
-        likeUnlike(jwt, set, auth, params)
+      .post(
+        "/reply/:id",
+        ({ jwt, set, cookie: { auth }, params, body }) =>
+          reply(jwt, set, auth, params, body),
+        {
+          body: t.Object({
+            text: t.String(),
+          }),
+        }
       )
 
       .delete("/:id", ({ jwt, set, cookie: { auth }, params }) =>
