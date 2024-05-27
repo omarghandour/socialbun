@@ -210,6 +210,27 @@ const feedExplore = async (set: any, params: any) => {
     return posts;
   } catch (err: any) {}
 };
+const userPosts = async (set: any, params: any) => {
+  const userID = params.id;
+  const itemsPerPage = 10;
+  const pageNumber = params.id;
+  const skipCount = (pageNumber - 1) * itemsPerPage;
+  const posts = await Post.find({ postedBy: userID })
+    .skip(skipCount)
+    .limit(itemsPerPage)
+    .select("-updatedAt")
+    .sort({ createdAt: -1 });
+  if (posts.length === 0) {
+    set.status = 404;
+    return "No posts found";
+  }
+  if (!posts || posts === undefined || posts === null) {
+    set.status = 404;
+    return "User not found";
+  }
+  set.status = 200;
+  return posts;
+};
 export {
   createPost,
   getPost,
@@ -218,4 +239,5 @@ export {
   reply,
   feedFollowing,
   feedExplore,
+  userPosts,
 };

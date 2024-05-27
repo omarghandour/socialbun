@@ -9,6 +9,7 @@ import {
   getPost,
   likeUnlike,
   reply,
+  userPosts,
 } from "../controllers/postController";
 const tokensec: any = process.env.JWT_SECRET;
 
@@ -31,6 +32,7 @@ posts.guard(
         feedFollowing(jwt, set, auth, params)
       )
       .get("/feed/explore/:id", ({ set, params }) => feedExplore(set, params))
+      .get("/user/posts/:id/:pg", ({ set, params }) => userPosts(set, params))
       .post(
         "/create",
         ({ jwt, set, cookie: { auth }, body }) =>
